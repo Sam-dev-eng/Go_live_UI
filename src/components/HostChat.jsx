@@ -1,10 +1,19 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Chat from "./Chat"
 
 export default function HostChat({ streamId }) {
   const [minimized, setMinimized] = useState(false)
   const [maximized, setMaximized] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   const [position, setPosition] = useState({ x: 24, y: 120 })
   const [iconPosition, setIconPosition] = useState({
@@ -19,7 +28,7 @@ export default function HostChat({ streamId }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
 
   const startDrag = (e) => {
-    if (maximized) return
+    if (maximized || isMobile) return
     setDragging(true)
     setOffset({
       x: e.clientX - position.x,
@@ -36,13 +45,13 @@ export default function HostChat({ streamId }) {
   }
 
   const startResize = (e) => {
-    if (maximized) return
+    if (maximized || isMobile) return
     e.stopPropagation()
     setResizing(true)
   }
 
   const onMove = (e) => {
-    if (dragging) {
+    if (dragging && !isMobile) {
       setPosition({
         x: e.clientX - offset.x,
         y: e.clientY - offset.y,
@@ -56,7 +65,7 @@ export default function HostChat({ streamId }) {
       })
     }
 
-    if (resizing) {
+    if (resizing && !isMobile) {
       setSize({
         width: Math.max(280, e.clientX - position.x),
         height: Math.max(320, e.clientY - position.y),
@@ -94,16 +103,15 @@ export default function HostChat({ streamId }) {
           onMouseDown={startIconDrag}
           onDoubleClick={openChat}
           style={{
-            left: iconPosition.x,
-            top: iconPosition.y,
+            left: isMobile ? window.innerWidth - 75 : iconPosition.x,
+            top: isMobile ? window.innerHeight - 75 : iconPosition.y,
           }}
-          className="absolute pointer-events-auto bg-purple-600 text-white w-14 h-14 rounded-full shadow-lg cursor-move"
+          className="absolute pointer-events-auto bg-purple-600 text-white w-14 h-14 rounded-full shadow-lg cursor-move flex items-center justify-center text-xl hover:bg-purple-700 transition-colors"
           title="Double click to open chat"
         >
           💬
-
           {unreadCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs min-w-6 h-6 px-1 rounded-full flex items-center justify-center">
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs min-w-6 h-6 px-1 rounded-full flex items-center justify-center font-bold">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -112,52 +120,74 @@ export default function HostChat({ streamId }) {
 
       <div
         style={
-          maximized
+          isMobile
             ? {
-                left: 20,
-                top: 20,
-                width: "calc(100vw - 40px)",
-                height: "calc(100vh - 40px)",
+                position: "fixed",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                width: "100%",
+                height: "50vh",
+                zIndex: 999
               }
-            : {
-                left: position.x,
-                top: position.y,
-                width: size.width,
-                height: size.height,
-              }
+            : maximized
+              ? {
+                  left: 20,
+                  top: 20,
+                  width: "calc(100vw - 40px)",
+                  height: "calc(100vh - 40px)",
+                }
+              : {
+                  left: position.x,
+                  top: position.y,
+                  width: size.width,
+                  height: size.height,
+                }
         }
         className={`
-          absolute pointer-events-auto bg-[#18181b] rounded-lg shadow-2xl
+          absolute pointer-events-auto bg-[#18181b] rounded-t-2xl md:rounded-lg shadow-2xl
           border border-gray-700 flex flex-col overflow-hidden
           ${minimized ? "hidden" : ""}
         `}
       >
         <div
-          onMouseDown={startDrag}
-          className="cursor-move flex items-center justify-between px-3 py-2 bg-[#0e0e10] border-b border-gray-700 z-10 shrink-0"
+          onMouseDown={isMobile ? null : startDrag}
+          className={`${isMobile ? "" : "cursor-move"} flex items-center justify-between px-3 py-2.5 bg-[#0e0e10] border-b border-gray-700 z-10 shrink-0`}
         >
           <p className="font-semibold text-sm text-white">Host Chat</p>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => setMinimized(true)}
-              className="bg-gray-700 hover:bg-gray-600 text-white w-7 h-7 rounded flex items-center justify-center"
-              title="Minimize"
-            >
-              −
-            </button>
+            {isMobile ? (
+              <button
+                type="button"
+                onClick={() => setMinimized(true)}
+                className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded-full text-xs font-bold transition-colors"
+              >
+                Hide Chat
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => setMinimized(true)}
+                  className="bg-gray-800 hover:bg-gray-700 text-white w-7 h-7 rounded flex items-center justify-center text-xs font-bold transition-colors"
+                  title="Minimize"
+                >
+                  −
+                </button>
 
-            <button
-              type="button"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => setMaximized((prev) => !prev)}
-              className="bg-gray-700 hover:bg-gray-600 text-white w-7 h-7 rounded flex items-center justify-center"
-              title={maximized ? "Restore" : "Maximize"}
-            >
-              {maximized ? "↙" : "□"}
-            </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => setMaximized((prev) => !prev)}
+                  className="bg-gray-800 hover:bg-gray-700 text-white w-7 h-7 rounded flex items-center justify-center text-xs font-bold transition-colors"
+                  title={maximized ? "Restore" : "Maximize"}
+                >
+                  {maximized ? "↙" : "□"}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -165,7 +195,7 @@ export default function HostChat({ streamId }) {
           <Chat streamId={streamId} compact onNewMessage={handleNewMessage} />
         </div>
 
-        {!maximized && (
+        {!maximized && !isMobile && (
           <div
             onMouseDown={startResize}
             className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize bg-gray-500/70 rounded-sm"

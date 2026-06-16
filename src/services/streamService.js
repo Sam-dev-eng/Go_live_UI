@@ -1,7 +1,18 @@
 import apiClient from "../api/apiClient"
 
-export const getLiveStreams = async () => {
-  const response = await apiClient.get("/streams?status=LIVE")
+export const getLiveStreams = async (query = "") => {
+  const url = query ? `/streams?query=${encodeURIComponent(query)}` : "/streams?status=LIVE"
+  const response = await apiClient.get(url)
+  return response.data
+}
+
+export const getTrendingStreams = async () => {
+  const response = await apiClient.get("/streams/trending")
+  return response.data
+}
+
+export const getLiveStreamsByCategory = async (category) => {
+  const response = await apiClient.get(`/streams?category=${encodeURIComponent(category)}`)
   return response.data
 }
 

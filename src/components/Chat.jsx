@@ -1,7 +1,7 @@
 import { useEffect, useState , useRef } from "react"
 import socketClient from "../api/socketClient"
 
-export default function Chat({ streamId, compact=false , onNewMessage  }) {
+export default function Chat({ streamId, compact=false , onNewMessage, onViewerCountUpdate, onStreamEnded }) {
 
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState("")
@@ -40,8 +40,18 @@ export default function Chat({ streamId, compact=false , onNewMessage  }) {
             
           const newMessage = JSON.parse(message.body)
 
-          setMessages((prev) => [...prev, newMessage])
-          if(onNewMessage) onNewMessage(newMessage)
+          if (newMessage.type === "VIEWER_COUNT") {
+            if (onViewerCountUpdate) {
+              onViewerCountUpdate(newMessage.viewer_count)
+            }
+          } else if (newMessage.type === "STREAM_ENDED") {
+            if (onStreamEnded) {
+              onStreamEnded()
+            }
+          } else {
+            setMessages((prev) => [...prev, newMessage])
+            if(onNewMessage) onNewMessage(newMessage)
+          }
         }
       )
 
@@ -53,7 +63,7 @@ export default function Chat({ streamId, compact=false , onNewMessage  }) {
       socketClient.deactivate()
     }
 
-  }, [streamId])
+  }, [streamId, onViewerCountUpdate, onStreamEnded, onNewMessage])
 
   const sendMessage = () => {
 
