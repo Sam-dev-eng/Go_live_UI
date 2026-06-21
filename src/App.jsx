@@ -8,6 +8,8 @@ import CreateStream from "./pages/CreateStream";
 import Dashboard from "./pages/Dashboard";
 import StreamSetup from "./pages/StreamSetup";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
 
 function App(){
@@ -67,13 +69,16 @@ function App(){
         // </ProtectedRoute> 
       } />
 
-        <Route 
-        path="/stream-setup/:streamId" 
+        <Route path="/stream-setup/:streamId" 
         element={
         // <ProtectedRoute> 
           <StreamSetup/> 
         // </ProtectedRoute>  
       }/>
+
+        {/* Admin routes — JWT-protected on the backend, guarded client-side in the component */}
+        <Route path="/admin/login"     element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   )

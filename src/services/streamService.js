@@ -61,3 +61,8 @@ export const endStream = async (streamId, hostKey) => {
 
   return response.data
 }
+
+export const likeStream = async (streamId) => {
+  const response = await apiClient.patch(`/streams/${streamId}/like`)
+  return response.data // { likes: <number> }
+}
