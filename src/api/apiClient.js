@@ -7,96 +7,34 @@ const apiClient = axios.create({
   },
 })
 
-
-
 /*
 ---------------------------------------
 Attach Access Token To Every Request
+
+Priority:
+  1. adminToken  — set by AdminLogin on successful admin login
+  2. accessToken — set by the regular user auth flow
+
+Admin requests always include the adminToken so the Bearer header
+is populated before the security filter validates it.
 ---------------------------------------
 */
-// apiClient.interceptors.request.use(
-//   (config) => {
+apiClient.interceptors.request.use(
+  (config) => {
+    const adminToken = localStorage.getItem("adminToken")
+    const accessToken = localStorage.getItem("accessToken")
 
-//     const token = localStorage.getItem("accessToken")
+    const token = adminToken || accessToken
 
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`
-//     }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
 
-//     return config
-//   },
-//   (error) => {
-//     return Promise.reject(error)
-//   }
-// )
-
-// /*
-// ---------------------------------------
-// Handle Token Refresh
-// ---------------------------------------
-// */
-// apiClient.interceptors.response.use(
-
-//   (response) => response,
-
-//   async (error) => {
-
-//     const originalRequest = error.config
-
-//     // If token expired
-//     if (
-//       error.response &&
-//       error.response.status === 401 &&
-//       !originalRequest._retry
-//     ) {
-
-//       originalRequest._retry = true
-
-//       try {
-
-//         const refreshToken = localStorage.getItem("refreshToken")
-
-//         if (!refreshToken) {
-//           throw new Error("No refresh token")
-//         }
-
-//         const response = await axios.post(
-//           `${API_BASE_URL}/auth/refresh`,
-//           {
-//             refreshToken: refreshToken
-//           }
-//         )
-
-//         const newAccessToken = response.data.accessToken
-
-//         // Save new token
-//         localStorage.setItem("accessToken", newAccessToken)
-
-//         // Update header
-//         apiClient.defaults.headers.Authorization = `Bearer ${newAccessToken}`
-
-//         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-
-//         // Retry original request
-//         return apiClient(originalRequest)
-
-//       } catch (refreshError) {
-
-//         // Refresh failed → logout user
-//         localStorage.removeItem("accessToken")
-//         localStorage.removeItem("refreshToken")
-
-//         window.location.href = "/login"
-
-//         return Promise.reject(refreshError)
-
-//       }
-
-//     }
-
-//     return Promise.reject(error)
-
-//   }
-// )
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 export default apiClient
